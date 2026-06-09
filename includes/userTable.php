@@ -1,26 +1,27 @@
 <?php
-// Controleer of de 'user' tabel al bestaat
-$checkTable = $pdo->query("SHOW TABLES LIKE 'user'");
+// Controleer of de 'transaction' tabel al bestaat
+$checkTable = $pdo->query("SHOW TABLES LIKE 'transaction'");
 if ($checkTable->rowCount() == 0) {
-    // Maak de 'user' tabel als deze nog niet bestaat
-   $pdo->exec("CREATE TABLE `user` (
+    // Maak de 'transaction' tabel als deze nog niet bestaat
+    $pdo->exec("CREATE TABLE `transaction` (
         `id` int NOT NULL AUTO_INCREMENT,
-        `username` varchar(50) NOT NULL,
-        `password` varchar(255) NOT NULL,
-        `balance` decimal(10,2) NOT NULL,
-        `isAdmin` tinyint(1) NOT NULL DEFAULT '0',
+        `sender` int NOT NULL,
+        `receiver` int NOT NULL,
+        `amount` decimal(10,2) NOT NULL,
+        `description` varchar(500) NOT NULL,
         PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
 
-    // Voeg de standaardgebruikers toe
-    $insertUsersQuery = "
-    INSERT INTO `user` (`id`, `username`, `password`, `balance`, `isAdmin`) VALUES
-    (1, 'Admin', 'AlfaBankAdminAccount', 1000.00, 0),
-    (2, 'FerryKuhlman', '12345678', 1255.36, 0),
-    (5, 'Han2002', 'password', 23424.84, 0),
-    (6, 'RoyBos', 'qwerty', 9.23, 0);
-    ";
-
-    // Voer de SQL-query uit om de gebruikers toe te voegen
-    $pdo->exec($insertUsersQuery);
+    // Voeg de gegevens toe
+    $pdo->exec("
+        INSERT INTO `transaction` (`id`, `sender`, `receiver`, `amount`, `description`) VALUES
+        (1, 3, 2, 65.00, 'Auto'),
+        (2, 5, 2, 94.00, '<script>alert(\"Je bent gehacked\")</script>'),
+        (3, 6, 2, 38.84, 'Avondje stappen'),
+        (4, 5, 6, 50.00, 'Boodschappen buurtsuper'),
+        (5, 6, 5, 50.00, 'Vakantie'),
+        (6, 2, 5, 30.00, 'Zakgeld'),
+        (7, 5, 6, -47.68, 'Boodschappen');
+    ");
 }
+?>

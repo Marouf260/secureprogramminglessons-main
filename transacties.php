@@ -7,7 +7,14 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
+
 $id = htmlspecialchars($_GET['id']);
+
+// Broken access control 
+if(!isset($id) || $id != $_SESSION['user']['id']){
+      header("location: dashboard.php");
+    exit;
+}
 
 // Gebruikersgegevens ophalen
 $stmt = $pdo->prepare("SELECT * FROM user WHERE id = ?");
