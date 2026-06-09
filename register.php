@@ -3,9 +3,9 @@ session_start();
 include 'includes/db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $passwordcheck = $_POST['passwordcheck'];
+    $username = htmlspecialchars($_POST['username']);
+    $password = htmlspecialchars($_POST['password']);
+    $passwordcheck = htmlspecialchars($_POST['passwordcheck']);
 
     if ($password == $passwordcheck) {
         $stmt = $pdo->prepare("SELECT * FROM user WHERE username = ?");
@@ -55,15 +55,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         <form action="<? echo htmlspecialchars($_SERVER["PHP_SELF"]);  ?>" method="post">
             <div class="mb-4">
-                <label for="username" class="block text-sm font-medium text-gray-700">Gebruikersnaam:</label>
+                <label for="username" class="block text-sm font-medium text-gray-700" required>Gebruikersnaam:</label>
                 <input type="text" id="username" name="username" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700">Wachtwoord:</label>
+                <label for="password" class="block text-sm font-medium text-gray-700" required>Wachtwoord:</label>
                 <input type="password" id="password" name="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div class="mb-6">
-                <label for="passwordcheck" class="block text-sm font-medium text-gray-700">Herhaal wachtwoord:</label>
+                <label for="passwordcheck" class="block text-sm font-medium text-gray-700" required>Herhaal wachtwoord:</label>
                 <input type="password" id="passwordcheck" name="passwordcheck" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             </div>
                 <div class="flex justify-center">

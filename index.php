@@ -9,12 +9,13 @@ include 'includes/transactionTable.php';
 //Controleer of post is geset
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     // Gebruikersnaam en wachtwoord uit post halen
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = htmlspecialchars($_POST['username']);
+    $password = htmlspecialchars($_POST['password']);
 
     // kwetsbaar voor SQL injectie
-    $sql = "SELECT * FROM user WHERE username = '$username' AND password = '$password'";
-    $result = $pdo->query($sql);
+    $sql = "SELECT * FROM user WHERE username = ? AND password = ?";
+    $result = $pdo->prepare($sql);
+    $result->execute([$username, $password]);
     $user = $result->fetch();
 
     // Controleer of er een rij is gevonden
@@ -69,7 +70,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         <label class="block text-sm font-medium text-gray-700">Uitgevoerde SQL-query:</label>
         <textarea readonly class="mt-1 block w-full border rounded-md py-2 px-3 resize-none" rows="4"><? //als $sql bestaat geef $sql, anders geef aan dat deze nog niet is ingevuld
         if(isset($sql)) {
-            echo $sql;
+            echo htmlspecialchars($sql);
         } else {
             echo "Log in om je SQL query te zien";
         }
