@@ -11,9 +11,13 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 $id = htmlspecialchars($_GET['id']);
 
 // Broken access control 
+// if(!isset($id) || $id != $_SESSION['user']['id']){
+//       header("location: dashboard.php");
+//     exit;
+// }
 if(!isset($id) || $id != $_SESSION['user']['id']){
-      header("location: dashboard.php");
-    exit;
+     header("location: dashboard.php");
+     exit;
 }
 
 // Gebruikersgegevens ophalen
