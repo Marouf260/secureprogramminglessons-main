@@ -23,7 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $error = "Gebruikersnaam moet tussen de 3 en 20 tekens bevatten en mag alleen letters, cijfers en underscores bevatten";
                 } else {
 
-                    $stmt = $pdo->prepare("INSERT INTO user (username, password, balance, isAdmin) VALUES (?, ?, 100, 0)");
+                    $stmt = $pdo->prepare("INSERT INTO `user` (`username`, `password`, `balance`, `isAdmin`
+                    ) VALUES (?, ?, 100, 0)");
                     $stmt->execute([$username, $password_hash]);
                     $success = "Je account is aangemaakt, je kunt nu inloggen";
                     echo "<meta http-equiv='refresh' content='1;url=index.php'>";

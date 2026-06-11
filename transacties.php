@@ -38,6 +38,8 @@ $outgoingTransactions = $stmt->fetchAll();
 $stmt = $pdo->prepare("SELECT * FROM transaction WHERE receiver = ?");
 $stmt->execute([$id]);
 $incomingTransactions = $stmt->fetchAll();
+
+
 ?>
 <!DOCTYPE html>
 <html lang="nl">

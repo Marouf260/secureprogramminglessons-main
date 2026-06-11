@@ -2,25 +2,36 @@
 session_start();
 include 'includes/db.php';
 
-if(!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true){
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header("location: index.php");
     exit;
 }
 
 // als button is ingedrukt
-if($_SERVER["REQUEST_METHOD"] == "POST"){
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $ontvanger = htmlspecialchars($_POST['ontvanger']);
-    $bedrag = htmlspecialchars($_POST['bedrag']);
+    $bedrag = filter_var($_POST['bedrag'], FILTER_VALIDATE_FLOAT);
     $omschrijving = htmlspecialchars($_POST['omschrijving']);
 
+    if ($bedrag === false) {
+        $error = "Ongeldige invoer: Het bedrag moet een geldig getal zijn.";
+        return;
+    }
+    
+    if ($bedrag <= 0) {
+        $error = "Fout: Je kunt alleen positieve bedragen overmaken.";
+        return;
+    }
+    
+    // else{
     // Controleer of de ontvanger bestaat
     $stmt = $pdo->prepare("SELECT * FROM user WHERE username = ?");
     $stmt->execute([$ontvanger]);
     $ontvanger = $stmt->fetch();
 
-    if($stmt->rowCount() == 1) {
+    if ($stmt->rowCount() == 1) {
         // Controleer of de gebruiker genoeg saldo heeft
-        if($bedrag > 0 && $_SESSION['user']['balance'] >= $bedrag) {
+        if ($bedrag > 0 && $_SESSION['user']['balance'] >= $bedrag) {
             // Zet de transactie in de database
             $stmt = $pdo->prepare("INSERT INTO transaction (sender, receiver, amount, description) VALUES (?, ?, ?, ?)");
             $stmt->execute([$_SESSION['user']['id'], $ontvanger['id'], $bedrag, $omschrijving]);
@@ -41,7 +52,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             $stmt = $pdo->prepare("SELECT balance FROM user WHERE id = ?");
             $stmt->execute([$_SESSION['user']['id']]);
 
-           //Bereken het nieuwe saldo van de ingelogde gebruiker
+            //Bereken het nieuwe saldo van de ingelogde gebruiker
             $saldo = $stmt->fetchColumn();
             $saldo = $saldo - $bedrag;
 
@@ -55,8 +66,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         }
     } else {
         $error = "Deze gebruiker bestaat niet";
+    
     }
-
+//    }
 }
 
 include 'includes/db.php';
@@ -69,6 +81,7 @@ $saldo = $stmt->fetchColumn();
 
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -76,6 +89,7 @@ $saldo = $stmt->fetchColumn();
     <!-- Voeg Tailwind CSS toe via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-100">
     <?php include 'includes/header.php'; ?>
 
@@ -88,11 +102,13 @@ $saldo = $stmt->fetchColumn();
                         <h3 class="font-bold text-xl mb-2">Mijn Saldo</h3>
                         <p class="text-sm text-gray-600 mb-4">Actueel Beschikbaar Saldo</p>
                     </div>
-                    <p class="text-4xl font-bold mb-4 <?php echo $saldo >= 0 ? 'text-green-500' : 'text-red-500'; ?> self-center">
+                    <p
+                        class="text-4xl font-bold mb-4 <?php echo $saldo >= 0 ? 'text-green-500' : 'text-red-500'; ?> self-center">
                         €<?php echo number_format($saldo, 2, ',', '.'); ?>
                     </p>
                     <div class="text-center">
-                        <a href="transacties.php?id=<?= htmlspecialchars($_SESSION['user']['id']) ?>" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="transacties.php?id=<?= htmlspecialchars($_SESSION['user']['id']) ?>"
+                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                             Transactieoverzicht
                         </a>
                     </div>
@@ -107,24 +123,29 @@ $saldo = $stmt->fetchColumn();
                     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) ?>" method="post">
                         <div class="mb-4">
                             <label for="ontvanger" class="block text-sm font-medium text-gray-700">Ontvanger:</label>
-                            <input type="text" id="ontvanger" name="ontvanger" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+                            <input type="text" id="ontvanger" name="ontvanger" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
                         </div>
                         <div class="mb-4">
                             <label for="bedrag" class="block text-sm font-medium text-gray-700">Bedrag(€):</label>
-                            <input type="number" id="bedrag" name="bedrag" step="0.01" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+                            <input type="number" id="bedrag" name="bedrag" step="0.01" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
                         </div>
                         <div class="mb-4">
-                            <label for="omschrijving" class="block text-sm font-medium text-gray-700">Omschrijving:</label>
-                            <input type="text" id="omschrijving" name="omschrijving" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+                            <label for="omschrijving"
+                                class="block text-sm font-medium text-gray-700">Omschrijving:</label>
+                            <input type="text" id="omschrijving" name="omschrijving" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
                         </div>
-                        <input type="submit" value="Overmaken" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline">
+                        <input type="submit" value="Overmaken"
+                            class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline">
                         <?php
-                            if(isset($error)) {
-                                echo '<p class="text-red-500 text-sm mt-2">' . $error . '</p>';
-                            }
-                            if(isset($success)) {
-                                echo '<p class="text-green-500 text-sm mt-2">' . $success . '</p>';
-                            }
+                        if (isset($error)) {
+                            echo '<p class="text-red-500 text-sm mt-2">' . $error . '</p>';
+                        }
+                        if (isset($success)) {
+                            echo '<p class="text-green-500 text-sm mt-2">' . $success . '</p>';
+                        }
                         ?>
                     </form>
                 </div>
@@ -132,4 +153,5 @@ $saldo = $stmt->fetchColumn();
         </div>
     </div>
 </body>
+
 </html>
