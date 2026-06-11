@@ -26,6 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt = $pdo->prepare("INSERT INTO user (username, password, balance, isAdmin) VALUES (?, ?, 100, 0)");
                     $stmt->execute([$username, $password_hash]);
                     $success = "Je account is aangemaakt, je kunt nu inloggen";
+                    echo "<meta http-equiv='refresh' content='1;url=index.php'>";
 
                 }
             }
@@ -36,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     } else {
         $error = "De wachtwoorden komen niet overeen";
-        
+
     }
 }
 

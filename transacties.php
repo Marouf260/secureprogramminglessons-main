@@ -15,7 +15,11 @@ $id = htmlspecialchars($_GET['id']);
 //       header("location: dashboard.php");
 //     exit;
 // }
-if (!isset($id) || $id != $_SESSION['user']['id']) {
+
+$isEigenAccount = (isset($id) && $id == $_SESSION['user']['id']);
+$isAdmin = (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin'] == 1);
+
+if (!$isEigenAccount && !$isAdmin) {
     header("location: dashboard.php");
     exit;
 }

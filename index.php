@@ -19,12 +19,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user = $result->fetch();
 
     $nu = time();
+    if ($user['isAdmin'] == 1) {
+        $_SESSION['isAdmin'] = 1;
+    } else {
+        $_SESSION['isAdmin'] = 0;
+    }
+
     if ($user && $user['lockout_until'] && strtotime($user['lockout_until']) > $nu) {
 
         $resterendeTijd = strtotime($user['lockout_until']) - $nu;
         $minuten = ceil($resterendeTijd / 60);
         $error = "Je account is tijdelijk geblokkeerd. Probeer het over " . $minuten . " minuut/minuten weer.";
     }
+
+
 
 
     // Controleer of er een rij is gevonden
@@ -54,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 $error = "Te veel mislukte pogingen. Dit account is voor 3 minuten geblokkeerd.";
             } else {
-                
+
                 $stmt = $pdo->prepare("UPDATE user SET failed_attempts = ? WHERE id = ?");
                 $stmt->execute([$nieuwe_pogingen, $user['id']]);
 
