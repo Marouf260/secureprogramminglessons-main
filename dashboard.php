@@ -15,15 +15,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($bedrag === false) {
         $error = "Ongeldige invoer: Het bedrag moet een geldig getal zijn.";
-        return;
+       
     }
     
-    if ($bedrag <= 0) {
+   else if ($bedrag <= 0) {
         $error = "Fout: Je kunt alleen positieve bedragen overmaken.";
-        return;
     }
-    
-    // else{
+
+    else{
     // Controleer of de ontvanger bestaat
     $stmt = $pdo->prepare("SELECT * FROM user WHERE username = ?");
     $stmt->execute([$ontvanger]);
@@ -68,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Deze gebruiker bestaat niet";
     
     }
-//    }
+   }
 }
 
 include 'includes/db.php';
