@@ -2,19 +2,32 @@
 session_start();
 include 'includes/db.php';
 
+// CSRF token 
+if (empty($_SESSION['_token'])) {
+    $token = bin2hex(random_bytes(32));
+    $_SESSION['_token'] = $token;
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    // CSRF token 
+    if (!isset($_POST['_token']) || $_POST['_token'] !== $_SESSION['_token']) {
+        die('CSRF token mismatch');
+    }
+
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $pepper = $_ENV['SECRET_PEPPER_KEY'];
     $passwordcheck = $_POST['passwordcheck'];
-    $password_hash = password_hash($password, PASSWORD_DEFAULT);
-
+    $peppered_password = hash_hmac("sha256", $password, $pepper);
+    $password_hash = password_hash($peppered_password, PASSWORD_DEFAULT);
     if ($password == $passwordcheck) {
         $stmt = $pdo->prepare("SELECT * FROM user WHERE username = ?");
         $stmt->execute([$username]);
         if ($stmt->rowCount() == 0) {
 
-            if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[a-z]/', $password) || !preg_match('/[0-9]/', $password)) {
-                $error = "Wachtwoord moet minimaal 8 tekens bevatten en een hoofdletter, kleine letter en een cijfer bevatten";
+            if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[a-z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+                $error = "Wachtwoord moet minimaal 8 tekens bevatten en een hoofdletter, kleine letter, een cijfer en een speciaal teken bevatten";
 
             } else {
 
@@ -66,31 +79,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php if (isset($error)): ?>
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <strong class="font-bold">Fout!</strong>
-                <span class="block sm:inline"><?= $error ?></span>
+                <span class="block sm:inline"><?= htmlspecialchars($error) ?></span>
             </div>
         <?php endif; ?>
         <?php if (isset($success)): ?>
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <strong class="font-bold">Gelukt!</strong>
-                <span class="block sm:inline"><?= $success ?></span>
+                <span class="block sm:inline"><?= htmlspecialchars($success) ?></span>
             </div>
         <?php endif; ?>
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+            <input type="hidden" name="_token" value="<?= $_SESSION['_token'] ?? '' ?>"/>
             <div class="mb-4">
-                <label for="username" class="block text-sm font-medium text-gray-700" >Gebruikersnaam:</label>
-                <input type="text" id="username" name="username" 
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" required>
+                <label for="username" class="block text-sm font-medium text-gray-700">Gebruikersnaam:</label>
+                <input type="text" id="username" name="username"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    required>
             </div>
             <div class="mb-6">
                 <label for="password" class="block text-sm font-medium text-gray-700">Wachtwoord:</label>
                 <input type="password" id="password" name="password"
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" required>
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    required>
             </div>
             <div class="mb-6">
-                <label for="passwordcheck" class="block text-sm font-medium text-gray-700" >Herhaal
+                <label for="passwordcheck" class="block text-sm font-medium text-gray-700">Herhaal
                     wachtwoord:</label>
                 <input type="password" id="passwordcheck" name="passwordcheck"
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" required>
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    required>
             </div>
             <div class="flex justify-center">
                 <button type="submit"

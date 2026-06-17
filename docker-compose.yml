@@ -2,6 +2,9 @@ services:
   web:
     build: .
     platform: linux/arm64/v8
+    environment:
+      - SECRET_PEPPER_KEY=HierEenHeelLangEnVeiligWachtwoord123!
+
     ports:
       - "8000:80"
     volumes:

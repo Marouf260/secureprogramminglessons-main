@@ -9,7 +9,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 if(!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] != 1){
     header('location: dashboard.php');
-    $error = "Je hebt geen toegang tot deze pagina";
     exit;
 }
 // show users
@@ -18,17 +17,7 @@ $stmt = $pdo->prepare("SELECT * FROM user");
 $stmt->execute();
 $users = $stmt->fetchAll();
 
-// if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] !== 1) {
 
-// if (!isset($_SESSION['isAdmin'])) {
-//     header('Location: dashboard.php');
-//     exit;
-// }
-
-// if ($_SESSION['isAdmin'] != 1) {
-//     header('Location: dashboard.php');
-//     exit;
-// }
 ?>
 
 <!DOCTYPE html>

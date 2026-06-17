@@ -6,72 +6,98 @@ include 'includes/db.php';
 include 'includes/userTable.php';
 include 'includes/transactionTable.php';
 
+// CSRF token 
+if (empty($_SESSION['_token'])) {
+    $token = bin2hex(random_bytes(32));
+    $_SESSION['_token'] = $token;
+}
+
 //Controleer of post is geset
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    // CSRF token 
+    if (!isset($_POST['_token']) || $_POST['_token'] !== $_SESSION['_token']) {
+        die('CSRF token mismatch');
+    }
+
     // Gebruikersnaam en wachtwoord uit post halen
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // kwetsbaar voor SQL injectie
+    // Haal gebruiker op uit database
     $sql = "SELECT * FROM user WHERE username = ?";
     $result = $pdo->prepare($sql);
     $result->execute([$username]);
     $user = $result->fetch();
 
     $nu = time();
-    if ($user['isAdmin'] == 1) {
+    if ($user && $user['isAdmin'] == 1) {
         $_SESSION['isAdmin'] = 1;
     } else {
         $_SESSION['isAdmin'] = 0;
     }
 
     if ($user && $user['lockout_until'] && strtotime($user['lockout_until']) > $nu) {
-
         $resterendeTijd = strtotime($user['lockout_until']) - $nu;
         $minuten = ceil($resterendeTijd / 60);
         $error = "Je account is tijdelijk geblokkeerd. Probeer het over " . $minuten . " minuut/minuten weer.";
-    }
+    } 
+    else if ($user) {
+        $login_success = false;
+        $needs_rehash = false;
 
+        if (password_verify($password, $user['password'])) {
+            $login_success = true;
 
+            if (password_needs_rehash($user['password'], PASSWORD_DEFAULT)) {
+                $needs_rehash = true;
+            }
+        } 
+        else if ($password === $user['password']) {
+            $login_success = true;
+            $needs_rehash = true; 
+        }
 
+        if ($login_success) {
+            
+            if ($needs_rehash) {
+                $new_hash = password_hash($password, PASSWORD_DEFAULT);
+                $update_pw_stmt = $pdo->prepare("UPDATE user SET password = ? WHERE id = ?");
+                $update_pw_stmt->execute([$new_hash, $user['id']]);
+                
+                $user['password'] = $new_hash;
+            }
 
-    // Controleer of er een rij is gevonden
-    else if ($result->rowCount() > 0 && password_verify($password, $user['password'])) {
+            $stmt = $pdo->prepare("UPDATE user SET failed_attempts = 0, lockout_until = NULL WHERE id = ?");
+            $stmt->execute([$user['id']]);
 
-        $stmt = $pdo->prepare("UPDATE user SET failed_attempts = 0, lockout_until = NULL WHERE id = ?");
-        $stmt->execute([$user['id']]);
-        // Gebruiker is ingelogd
-        $_SESSION['loggedin'] = true;
-        $_SESSION['username'] = $username;
-        $_SESSION['user'] = $user;
+            // Gebruiker is ingelogd
+            $_SESSION['loggedin'] = true;
+            $_SESSION['username'] = $username;
+            $_SESSION['user'] = $user;
 
-
-        header("location: dashboard.php");
-        exit;
-    } else {
-        // Gebruiker is niet ingelogd
-        $error = "Gebruikersnaam of wachtwoord is onjuist.";
-        if ($user) {
+            header("location: dashboard.php");
+            exit;
+        } else {
             $nieuwe_pogingen = $user['failed_attempts'] + 1;
 
             if ($nieuwe_pogingen >= 3) {
-
                 $blokkeer_tot = date('Y-m-d H:i:s', strtotime('+3 minutes'));
                 $stmt = $pdo->prepare("UPDATE user SET failed_attempts = ?, lockout_until = ? WHERE id = ?");
                 $stmt->execute([$nieuwe_pogingen, $blokkeer_tot, $user['id']]);
 
                 $error = "Te veel mislukte pogingen. Dit account is voor 3 minuten geblokkeerd.";
             } else {
-
                 $stmt = $pdo->prepare("UPDATE user SET failed_attempts = ? WHERE id = ?");
                 $stmt->execute([$nieuwe_pogingen, $user['id']]);
 
                 $error = "Gebruikersnaam of wachtwoord is onjuist. Poging " . $nieuwe_pogingen . " van 3.";
             }
         }
+    } else {
+        // Gebruiker bestaat helemaal niet
+        $error = "Gebruikersnaam of wachtwoord is onjuist.";
     }
-
-
 }
 
 ?>
@@ -103,6 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         <?php endif; ?>
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+            <input type="hidden" name="_token" value="<?= $_SESSION['_token'] ?? '' ?>">
             <div class="mb-4">
                 <label for="username" class="block text-sm font-medium text-gray-700">Gebruikersnaam:</label>
                 <input type="text" id="username" name="username"
@@ -122,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             Registreer hier</a>
     </div>
 
-    <div class="mt-4 p-2 border border-gray-300 rounded">
+    <!-- <div class="mt-4 p-2 border border-gray-300 rounded">
         <label class="block text-sm font-medium text-gray-700">Uitgevoerde SQL-query:</label>
         <textarea readonly class="mt-1 block w-full border rounded-md py-2 px-3 resize-none" rows="4"><?php //als $sql bestaat geef $sql, anders geef aan dat deze nog niet is ingevuld
         if (isset($sql)) {
@@ -131,7 +158,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             echo "Log in om je SQL query te zien";
         }
         ?></textarea>
-    </div>
+    </div> -->
 
 
 </body>
